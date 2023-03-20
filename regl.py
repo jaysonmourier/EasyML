@@ -37,12 +37,20 @@ def load_data_from_csv(fichier, separateur=',', en_tete=0, index_col=None, noms_
 
 
 def train(file, features, target, std, model):
-    # Charger les données à partir du fichier CSV
-    data = pd.read_csv(file)
-    
-    # Sélectionner les colonnes utiles et la colonne cible
-    X = data[features]
-    y = data[target]
+    try:
+        # Charger les données à partir du fichier CSV
+        data = pd.read_csv(file)
+    except FileNotFoundError:
+        print("Erreur : fichier non trouvé.")
+        return
+
+    if set(features + [target]).issubset(data.columns):
+        # Sélectionner les colonnes utiles et la colonne cible
+        X = data[features]
+        y = data[target]
+    else:
+        print("Erreur : certaines colonnes sont manquantes.")
+        return
 
     # Diviser les données en ensembles d'entraînement et de test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -53,8 +61,12 @@ def train(file, features, target, std, model):
         X_train = scaler.fit_transform(X_train)
         X_test = scaler.transform(X_test)
 
-    # Entraîner le modèle
-    model.fit(X_train, y_train)
+    try:
+        # Entraîner le modèle
+        model.fit(X_train, y_train)
+    except Exception as e:
+        print("Erreur lors de l'entraînement du modèle :", e)
+        return
 
     # Retourner le modèle pré-entraîné
     return model
