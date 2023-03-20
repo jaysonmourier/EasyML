@@ -1,8 +1,10 @@
-Commande:
-  'USE' fichier=Who
-
-;
-
-Who:
-  name = /[^,]*/
-;
+ Model: Fichiers=Fichier Cibles=Cible Standardizers=Standardizer Modeles=Modele;
+    Fichier: 'USE' name=ID 
+        FICHIER+=Feature
+    ;
+    Feature: 'FEATURE' name=ID;
+    Modele: 'MODEL' name= Type;
+    Type:"linear" | "svm" | "logistic";
+    Cible: 'TARGET' name=ID;
+    Standardizer: 'STD' state=BOOL;
+    Comment: /\/\/.*/;
