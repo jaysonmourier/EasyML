@@ -1,0 +1,7 @@
+Command:
+  'USE' name=ID
+  'FEATURE' names+=Colonne[',']
+;
+Colonne:
+    nom = /[^,]*/
+;
