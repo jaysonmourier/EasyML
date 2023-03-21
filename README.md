@@ -11,6 +11,13 @@ Whether you are a beginner or an experienced machine learning practitioner, Easy
 
 ## Usage
 
+```
+USE house_price_prediction.csv
+FEATURES location, size, age, condition, n_bedrooms, n_bathrooms
+TARGET price
+MODEL svm
+```
+
 EasyML is designed to simplify the process of writing machine learning scripts, making it possible for even non-experts to train powerful models with ease.
 
 Here's a simple use case to demonstrate how EasyML works:
@@ -22,11 +29,4 @@ Here's a simple use case to demonstrate how EasyML works:
 With these three simple steps, you can train a machine learning model using EasyML. The framework will take care of all the heavy lifting, including preprocessing the data, selecting the right parameters, and training the model.
 
 In the end, you'll get a pre-trained model that you can use to make predictions on new data. With EasyML, training machine learning models has never been easier!
-
-```
-USE house_price_prediction.csv
-FEATURES location, size, age, condition, n_bedrooms, n_bathrooms
-TARGET price
-MODEL svm
-```
 
