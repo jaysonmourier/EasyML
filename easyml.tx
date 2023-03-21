@@ -1,10 +1,21 @@
- Model: Fichiers=Fichier Cibles=Cible Standardizers=Standardizer Modeles=Modele;
+ Model: Fichiers=Fichier Features=Feature Cibles=Cible Standardizers=Standardizer Modeles=Modele;
     Fichier: 'USE' name=ID 
-        FICHIER+=Feature
+             sparator=Separator?
     ;
-    Feature: 'FEATURE' name=ID;
+    Separator: 'SEPARATOR' name=(\s)([,.!?\\-]);
+
+    TypeSeparator:","|";";
+
+    Feature: 'FEATURE' names+=Colonne[','];
+
+    Colonne: name=ID;
+
     Modele: 'MODEL' name= Type;
-    Type:"linear" | "svm" | "logistic";
+
+    Type: "linear" | "svm" | "logistic";
+
     Cible: 'TARGET' name=ID;
+
     Standardizer: 'STD' state=BOOL;
+
     Comment: /\/\/.*/;
