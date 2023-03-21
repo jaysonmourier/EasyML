@@ -1,3 +1,6 @@
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/jaysonmourier/EasyML/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/jaysonmourier/EasyML/tree/main)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 # EasyML
 
 EasyML is a machine learning framework designed to simplify the training of machine learning models. It is intended for non-expert users who want to leverage the power of these algorithms, but may not have a deep understanding of programming.
