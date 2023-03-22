@@ -2,9 +2,9 @@
     Fichier: 'USE' name=ID 
              sparator=Separator?
     ;
-    Separator: 'SEPARATOR' name=(\s)([,.!?\\-]);
+    Separator: 'SEPARATOR' name=TypeSeparator;
 
-    TypeSeparator:","|";";
+    TypeSeparator: ","|";"|"/";
 
     Feature: 'FEATURE' names+=Colonne[','];
 

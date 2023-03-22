@@ -14,6 +14,7 @@ file= model.Fichiers.name+".csv"
 target = model.Cibles.name
 std = model.Standardizers.state
 modeluse = model.Modeles.name
+sepaparator=model.Fichiers.sparator.name
 features = []
 
 for i in model.Features.names:
@@ -21,6 +22,7 @@ for i in model.Features.names:
 
 
 print("le fichier sélectionné est : "+file)
+print("le séparateur est "+sepaparator)
 print("\n les colonnes utilisées sont : ")
 print(features)
 

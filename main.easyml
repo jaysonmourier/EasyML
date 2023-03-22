@@ -1,5 +1,5 @@
-USE test
-FEATURE location, age
+USE test SEPARATOR /
+FEATURE location, age, donne, fromage
 TARGET price
 STD true
 MODEL linear
