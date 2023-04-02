@@ -1,6 +1,16 @@
+import sys
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from joblib import dump
+
+
+from textx import metamodel_from_str
+
+from grammar import grammar
+
+from art import text2art
 
 def load_data_from_csv(fichier, separateur=',', en_tete=0, index_col=None, noms_colonnes=None, encodage='utf-8', skip_blank_lines=True, na_values=None, dtype=None):
     """
@@ -69,7 +79,74 @@ def train(file, features, target, std, model):
         return
 
     # Retourner le modèle pré-entraîné
-    return model
+    return (model, X_train, y_train, X_test, y_test)
+
+def eval(model, x, y):
+    print("Score: " + str(model.score(x, y)))
+
+def home():
+    ascii_art = text2art("EasyML")
+    print(ascii_art)
+    print("Simplify your machine learning journey with EasyML!")
+    print("\n\n")
 
 if __name__ == "__main__":
-    pass
+
+    if len(sys.argv) > 1:
+        argument = sys.argv[1]
+    else:
+        print("USAGE: easmyml.py [filename]")
+        exit(1)
+
+    home()
+
+    filename: str = None
+    features: list = []
+    target: str = None
+    modelname: str = None
+    std: bool = False
+
+    valid: bool = True
+
+    try:
+        m = metamodel_from_str(grammar)
+        model = m.model_from_file(argument)
+    except Exception:
+        print("[FATAL] Something wrong")
+        exit(1)
+    
+    filename = model.use_csv.csv_file
+    features = model.features.feature_names
+    target = model.target.target_column
+    modelname = model.model.model_type
+    std = True if model.standardize else False
+
+    if not filename or not features or not target or not modelname:
+        valid = False
+
+    print("Configuration:")
+    print("\t- filename: " + filename)
+    print("\t- features: " + str(features))
+    print("\t- target: " + target)
+    print("\t- model name: " + modelname)
+    print("\t- standardization: " + str(std))
+    print("\n")
+
+    if not valid:
+        print("Something wrong!")
+        exit(1)
+    
+    model = None
+    if modelname == "SVM":
+        model = SVC()
+    else:
+        print("Invalid model name!")
+        exit(1)
+    
+    model, _, _, xtest, ytest = train(filename, features, target, std, model)
+
+    eval(model, xtest, ytest)
+
+    dump(model, "your_model.joblib")
+
+    print("Your model is saved as : your_model.joblib")
