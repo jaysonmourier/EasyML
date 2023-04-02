@@ -1,6 +1,0 @@
-USE test 
-FEATURE poid
-FEATURE taille
-TARGET age
-STD true
-MODEL linear
