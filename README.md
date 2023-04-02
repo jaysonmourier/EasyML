@@ -16,6 +16,7 @@ USE house_price_prediction.csv
 FEATURES location, size, age, condition, n_bedrooms, n_bathrooms
 TARGET price
 MODEL svm
+STD
 ```
 
 EasyML is designed to simplify the process of writing machine learning scripts, making it possible for even non-experts to train powerful models with ease.
