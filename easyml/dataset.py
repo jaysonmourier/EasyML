@@ -1,6 +1,5 @@
 import pandas as pd
-from colorama import Fore
-
+from . import log
 from sklearn.model_selection import train_test_split
 
 class Dataset:
@@ -12,6 +11,8 @@ class Dataset:
     encoding: str = "utf-8"
     skip_blank_lines: bool = True
     na_values: str = ""
+    features: list[str] = None
+    target: str = None
 
     dataframe: pd.DataFrame = None
     
@@ -51,9 +52,15 @@ class Dataset:
                 na_values=self.na_values,
             )
         except Exception as e:
-            print(Fore.RED + "[FATAL] File not found.")
             print(e)
+            log.fatal(1, "File not found.")
             exit(1)
+
+    def split(self, test_size: float = .2):
+        self.Xtrain, 
+        self.Xtest, 
+        self.Ytrain, 
+        self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=test_size)
 
     def __str__(self):
         if self.dataframe:

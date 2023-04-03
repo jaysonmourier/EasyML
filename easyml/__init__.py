@@ -1,4 +1,4 @@
 from .dataset import Dataset
 from .grammar import grammar
-from .StateBuilder import StateBuilder
+from .ContextBuilder import ContextBuilder
 from .log import *
