@@ -57,10 +57,7 @@ class Dataset:
             exit(1)
 
     def split(self, test_size: float = .2):
-        self.Xtrain, 
-        self.Xtest, 
-        self.Ytrain, 
-        self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=test_size)
+        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=test_size)
 
     def __str__(self):
         if self.dataframe:

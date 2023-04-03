@@ -1,10 +1,14 @@
 from textx import metamodel_from_str
-import pandas as pd
-from . import log, grammar, Dataset
+from . import log, grammar, Dataset, Model
+
+from sklearn.svm import SVC
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import GradientBoostingClassifier
 
 class ContextBuilder:
 
     dataset: Dataset
+    model: Model
     test_size: float
 
     def __init__(self, filepath: str):
@@ -19,6 +23,10 @@ class ContextBuilder:
         self.load_features_and_target()
         self.load_test_size()
         self.dataset.split(self.test_size)
+        self.load_model()
+        self.model.train(self.dataset.Xtrain, self.dataset.Ytrain)
+        self.model.accuracy(self.dataset.Xtest, self.dataset.Ytest)
+        log.info("Total score: " + str(self.model.score))
 
     def load_dataset(self):
         log.info("Loading dataset...")
@@ -63,6 +71,7 @@ class ContextBuilder:
 
     def load_test_size(self):
         log.info("Loading size of testing set...")
+        
         test_size = self.model.test.test if self.model.test is not None else 20
 
         if test_size < 0 or test_size > 99:
@@ -71,4 +80,17 @@ class ContextBuilder:
         self.test_size = test_size / 100
 
     def load_model(self):
-        pass
+        log.info("Loading model...")
+
+        model_name = self.model.model.model_type if self.model.model.model_type is not None else "SVM"
+
+        m = None
+
+        if model_name == "SVM":
+            m = SVC()
+        elif model_name == "XGBoost":
+            m = GradientBoostingClassifier()
+        elif model_name == "Linear":
+            m = LinearRegression()
+
+        self.model = Model(m)

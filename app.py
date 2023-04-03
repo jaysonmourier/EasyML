@@ -28,4 +28,4 @@ if __name__ == "__main__":
     load_script(filepath=filepath)
 
     # OK
-    print('OK')
+    #print('OK')
