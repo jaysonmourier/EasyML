@@ -1,5 +1,6 @@
 from textx import metamodel_from_str
 from . import log, grammar, Dataset, Model
+from joblib import dump
 
 from sklearn.svm import SVC
 from sklearn.linear_model import LinearRegression
@@ -8,7 +9,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 class ContextBuilder:
 
     dataset: Dataset
-    model: Model
+    algo: Model
     test_size: float
 
     def __init__(self, filepath: str):
@@ -24,9 +25,9 @@ class ContextBuilder:
         self.load_test_size()
         self.dataset.split(self.test_size)
         self.load_model()
-        self.model.train(self.dataset.Xtrain, self.dataset.Ytrain)
-        self.model.accuracy(self.dataset.Xtest, self.dataset.Ytest)
-        log.info("Total score: " + str(self.model.score))
+        self.algo.train(self.dataset.Xtrain, self.dataset.Ytrain)
+        self.algo.accuracy(self.dataset.Xtest, self.dataset.Ytest)
+        log.info("Total score: " + str(self.algo.score))
 
     def load_dataset(self):
         log.info("Loading dataset...")
@@ -93,4 +94,10 @@ class ContextBuilder:
         elif model_name == "Linear":
             m = LinearRegression()
 
-        self.model = Model(m)
+        self.algo = Model(m)
+
+    def export_model(self, output: str ="model.joblib"):
+        dump(self.algo, output)
+
+    def __str__(self):
+        pass

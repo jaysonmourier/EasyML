@@ -4,7 +4,7 @@ from art import text2art
 
 def load_script(filepath: str):
     easyml.log.info("Initialization...")
-    statebuilder = easyml.ContextBuilder(filepath=filepath)
+    return easyml.ContextBuilder(filepath=filepath)
 
 def home():
     ascii_art = text2art("EasyML")
@@ -15,6 +15,7 @@ def home():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file', help='Input file name')
+    parser.add_argument('-o', '--output', help='Output file name')
     args = parser.parse_args()
 
     if not args.file:
@@ -25,7 +26,5 @@ if __name__ == "__main__":
     home()
 
     # load dataset
-    load_script(filepath=filepath)
-
-    # OK
-    #print('OK')
+    state = load_script(filepath=filepath)
+    state.export_model(args.output if args.output is not None else "model.save")
