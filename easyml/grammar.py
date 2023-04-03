@@ -3,6 +3,7 @@ Language:
     use_csv=UseCSV
     features=Features
     target=Target
+    test=TEST?
     model=Model
     standardize=Standardize?
 ;
@@ -38,21 +39,20 @@ FILE_OPTIONS:
     index_col=INDEX_COL?
     names=NAMES?
     encoding=ENCODING?
-    skip_blank_lines=SKIP_BLANK_LINES?
     na_values=NA_VALUES?
 '}'
 ;
 
 SEPARATOR:
-'SEP' STRING
+'SEP' sep=STRING
 ;
 
 HEADER:
-'HEADER' INT
+'HEADER' header=INT
 ;
 
 INDEX_COL:
-'INDEX COL' INT
+'INDEX COL' index_col=INT
 ;
 
 NAMES:
@@ -60,15 +60,15 @@ NAMES:
 ;
 
 ENCODING:
-'ENCODING' STRING
-;
-
-SKIP_BLANK_LINES:
-'SKIP BLANK LINES'
+'ENCODING' encoding=STRING
 ;
 
 NA_VALUES:
 'NA VALUES' na_values*=STRING[',']
+;
+
+TEST:
+'TEST' test=INT
 ;
 
 """
