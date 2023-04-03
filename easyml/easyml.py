@@ -4,13 +4,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from joblib import dump
-
-
 from textx import metamodel_from_str
-
-from grammar import grammar
-
+from easyml.grammar import grammar
 from art import text2art
+import argparse
+from colorama import Fore
 
 def load_data_from_csv(fichier, separateur=',', en_tete=0, index_col=None, noms_colonnes=None, encodage='utf-8', skip_blank_lines=True, na_values=None, dtype=None):
     """
@@ -92,10 +90,14 @@ def home():
 
 if __name__ == "__main__":
 
-    if len(sys.argv) > 1:
-        argument = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--file', help="Input file name")
+    args = parser.parse_args()
+
+    if args.file:
+        pass
     else:
-        print("USAGE: easmyml.py [filename]")
+        print(Fore.RED + "erreur: please use '--help' command.")
         exit(1)
 
     home()
@@ -110,7 +112,7 @@ if __name__ == "__main__":
 
     try:
         m = metamodel_from_str(grammar)
-        model = m.model_from_file(argument)
+        model = m.model_from_file(args.file)
     except Exception:
         print("[FATAL] Something wrong")
         exit(1)
