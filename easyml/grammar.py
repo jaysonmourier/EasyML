@@ -25,7 +25,7 @@ Model:
 ;
 
 ModelType:
-    'SVM' | 'XGBoost' | 'Linear'
+    'SVM' | 'XGBoost' | 'Logistic'
 ;
 
 Standardize:

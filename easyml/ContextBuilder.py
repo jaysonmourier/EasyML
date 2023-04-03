@@ -2,9 +2,15 @@ from textx import metamodel_from_str
 from . import log, grammar, Dataset, Model
 from joblib import dump
 
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
 from sklearn.svm import SVC
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
+
+import numpy as np
 
 class ContextBuilder:
 
@@ -24,10 +30,13 @@ class ContextBuilder:
         self.load_features_and_target()
         self.load_test_size()
         self.dataset.split(self.test_size)
+        self.load_std()
         self.load_model()
         self.algo.train(self.dataset.Xtrain, self.dataset.Ytrain)
         self.algo.accuracy(self.dataset.Xtest, self.dataset.Ytest)
         log.info("Total score: " + str(self.algo.score))
+        log.info("Best params: " + str(self.algo.best_params()))
+        log.info("Best score: " + str(self.algo.best_score()))
 
     def load_dataset(self):
         log.info("Loading dataset...")
@@ -88,16 +97,66 @@ class ContextBuilder:
         m = None
 
         if model_name == "SVM":
-            m = SVC()
+            m = self.build_svm()
         elif model_name == "XGBoost":
-            m = GradientBoostingClassifier()
-        elif model_name == "Linear":
-            m = LinearRegression()
+            m = self.build_gb()
+        elif model_name == "Logistic":
+            m = self.build_lr()
 
         self.algo = Model(m)
+
+    def load_std(self):
+        self.std = self.model.standardize if self.model.standardize else None
 
     def export_model(self, output: str ="model.joblib"):
         dump(self.algo, output)
 
     def __str__(self):
         pass
+
+
+    def build_svm(self):
+        param_grid = {
+            'svc__C': [0.1, 1, 10, 100],
+            'svc__gamma': [0.001, 0.01, 0.1, 1],
+            'svc__kernel': ['linear', 'poly', 'rbf', 'sigmoid']
+        }
+
+        pipeline = Pipeline([
+            ('scaler', StandardScaler() if self.std else None),
+            ('svc', SVC())
+        ])
+
+        return GridSearchCV(pipeline, param_grid=param_grid, cv=5, n_jobs=-1, verbose=3)
+    
+    def build_gb(self):
+        param_grid = {
+            'gb__n_estimators': [50, 100, 200],
+            'gb__learning_rate': [0.01, 0.1, 1],
+            'gb__max_depth': [3, 5, 7]
+        }
+
+        pipeline = Pipeline([
+            ('scaler', StandardScaler() if self.std else None),
+            ('gb', GradientBoostingClassifier())
+        ])
+
+        return GridSearchCV(pipeline, param_grid=param_grid, cv=5, n_jobs=-1, verbose=3)
+
+
+    def build_lr(self):
+        param_grid = {
+            'penalty': ['l1', 'l2', 'elasticnet'],
+            'C': np.logspace(-4, 4, 20),
+            'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'],
+            'max_iter': [1000, 2000, 5000]
+        }
+
+        pipeline = Pipeline([
+            ('scaler', StandardScaler() if self.std else None),
+            ('lr', LogisticRegression())
+        ])
+
+        logreg = LogisticRegression(random_state=42)
+
+        return GridSearchCV(logreg, param_grid, cv=5, verbose=3, n_jobs=-1)
