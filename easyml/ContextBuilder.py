@@ -11,6 +11,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 
 import numpy as np
+import os.path
 
 class ContextBuilder:
 
@@ -24,7 +25,10 @@ class ContextBuilder:
         try:
             self.model = self.metamodel.model_from_file(file_name=filepath)
         except Exception:
-            log.fatal(1, "Error during initialization. Check the validity of the script name.")
+            if os.path.isfile(filepath):
+                log.fatal(1, "Error during initialization. Check the validity of syntax of your code.")
+            else:
+                log.fatal(1, "Error during initialization. Check the validity of the script name.")
         
         self.load_dataset()
         self.load_features_and_target()
