@@ -1,4 +1,6 @@
 from textx import metamodel_from_str
+
+from easyml.PDFBuilder import plot
 from . import log, grammar, Dataset, Model
 from joblib import dump
 
@@ -26,6 +28,7 @@ class ContextBuilder:
         except Exception:
             log.fatal(1, "Error during initialization. Check the validity of the script name.")
         
+        
         self.load_dataset()
         self.load_features_and_target()
         self.load_test_size()
@@ -34,6 +37,7 @@ class ContextBuilder:
         self.load_model()
         self.algo.train(self.dataset.Xtrain, self.dataset.Ytrain)
         self.algo.accuracy(self.dataset.Xtest, self.dataset.Ytest)
+        plot(self.model.use_csv.csv_file, self.model.features.feature_names, self.model.model.model_type ,self.model.target.target_column,self.test_size)
         log.info("Total score: " + str(self.algo.score))
         log.info("Best params: " + str(self.algo.best_params()))
         log.info("Best score: " + str(self.algo.best_score()))
@@ -119,7 +123,7 @@ class ContextBuilder:
         param_grid = {
             'svc__C': [0.1, 1, 10, 100],
             'svc__gamma': [0.001, 0.01, 0.1, 1],
-            'svc__kernel': ['linear', 'poly', 'rbf', 'sigmoid']
+            'svc__kernel': ['linear', 'rbf', 'sigmoid']
         }
 
         pipeline = Pipeline([
