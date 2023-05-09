@@ -1,7 +1,7 @@
 grammar = """
 Language:
     use_csv=UseCSV
-    features=Features
+    features=F
     target=Target
     test=TEST?
     model=Model
@@ -14,6 +14,14 @@ UseCSV:
 
 Features:
     'FEATURES' feature_names*=ID[',']
+;
+
+FeaturesSelector:
+    'FEATURE_SELECTOR' selector=INT
+;
+
+F:
+    (Features|FeaturesSelector)
 ;
 
 Target:
