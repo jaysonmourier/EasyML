@@ -27,4 +27,4 @@ if __name__ == "__main__":
 
     # load dataset
     state = load_script(filepath=filepath)
-    state.export_model(args.output if args.output is not None else "model.save")
+    state.export_model("outputs/" + args.output if args.output is not None else "model.save")
