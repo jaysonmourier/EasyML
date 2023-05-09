@@ -57,11 +57,11 @@ class Dataset:
             exit(1)
 
     def split(self, test_size: float = .2):
-        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=test_size)
+        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe.drop(self.target, axis=1), self.dataframe[self.target], test_size=test_size)
 
     def __str__(self):
-        if self.dataframe:
-            return str(self.dataframe.head())
+        if self.dataframe:  
+            return self.dataframe.head()
         else:
             return "Empty DataFrame."
  
