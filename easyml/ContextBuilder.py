@@ -7,6 +7,8 @@ from joblib import dump
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.feature_selection import SelectKBest, f_classif
+
 
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
@@ -20,13 +22,15 @@ class ContextBuilder:
     dataset: Dataset
     algo: Model
     test_size: float
+    feature_selector: int = None
 
     def __init__(self, filepath: str):
         self.metamodel = metamodel_from_str(grammar)
         
         try:
             self.model = self.metamodel.model_from_file(file_name=filepath)
-        except Exception:
+        except Exception as e:
+            print(e)
             log.fatal(1, "Error during initialization. Check the validity of the script name.")
         
         
@@ -75,19 +79,40 @@ class ContextBuilder:
 
     def load_features_and_target(self):
         log.info("Loading features and target...")
-        
-        if self.model.features is None:
-            features = []
-        else:
-            features = self.model.features.feature_names
+
+        try:
+            self.feature_selector = self.model.features.selector
+        except Exception:
+            pass
+            
+        if self.feature_selector is None:
+            if self.model.features is None:
+                features = []
+            else:
+                features = self.model.features.feature_names
 
         if self.model.target is None:
             target = ""
         else:
             target = self.model.target.target_column
         
-        self.dataset.features = features
-        self.dataset.target = target
+        if self.feature_selector is None:
+            self.dataset.features = features
+        else:
+            self.dataset.target = target
+
+    
+    def select_k_features(X, y, k):
+        if k > X.shape[1]:
+            raise ValueError(f"k ({k}) doit être inférieur ou égal au nombre de colonnes dans X ({X.shape[1]})")
+
+        selector = SelectKBest(score_func=f_classif, k=k)
+
+        selector.fit(X, y)
+
+        X_selected = selector.transform(X)
+
+        return X_selected
 
     def extract_features(self):
         log.info("Extract feature...")
