@@ -4,7 +4,7 @@ from art import text2art
 
 def load_script(filepath: str):
     easyml.log.info("Initialization...")
-    return easyml.contextbuilder(filepath=filepath)
+    return easyml.ContextBuilder(filepath=filepath)
 
 def home():
     ascii_art = text2art("EasyML")
