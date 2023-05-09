@@ -1,4 +1,7 @@
 pytest
 scikit-learn
+seaborn
+PyPDF3
+reportlab
 colorama
 tqdm
