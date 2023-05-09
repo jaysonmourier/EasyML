@@ -1,5 +1,5 @@
-USE "data/minitrain.csv"
-FEATURES clock_speed, int_memory
-TARGET price_range
+USE "data/credit_customers.csv"
+FEATURES credit_history, other_parties, personal_status, checking_status
+TARGET class
 TEST 20
 MODEL SVM

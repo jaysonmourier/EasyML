@@ -6,13 +6,14 @@ from joblib import dump
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 
 import numpy as np
+import pandas as pd
 
 class ContextBuilder:
 
@@ -31,13 +32,18 @@ class ContextBuilder:
         
         self.load_dataset()
         self.load_features_and_target()
+        self.extract_features()
+        self.convert_target_string_columns_to_numeric()
+        self.convert_features_string_columns_to_numeric()
         self.load_test_size()
         self.dataset.split(self.test_size)
         self.load_std()
         self.load_model()
         self.algo.train(self.dataset.Xtrain, self.dataset.Ytrain)
         self.algo.accuracy(self.dataset.Xtest, self.dataset.Ytest)
-        plot(self.model.use_csv.csv_file, self.model.features.feature_names, self.model.model.model_type ,self.model.target.target_column,self.test_size)
+        print(self.model.features.feature_names)
+        #exit()
+        #plot(self.model.use_csv.csv_file, self.model.features.feature_names, self.model.model.model_type ,self.model.target.target_column,self.test_size)
         log.info("Total score: " + str(self.algo.score))
         log.info("Best params: " + str(self.algo.best_params()))
         log.info("Best score: " + str(self.algo.best_score()))
@@ -82,6 +88,38 @@ class ContextBuilder:
         
         self.dataset.features = features
         self.dataset.target = target
+
+    def extract_features(self):
+        log.info("Extract feature...")
+        self.dataset.dataframe = self.dataset.dataframe[self.dataset.features + [self.dataset.target]]
+
+    def convert_target_string_columns_to_numeric(self):
+        col = self.dataset.target
+
+        le = LabelEncoder()
+
+        if self.dataset.dataframe[col].dtype == 'object':
+            try:
+                self.dataset.dataframe[col] = le.fit_transform(self.dataset.dataframe[col])
+            except Exception as e:
+                print(f"Erreur lors de la transformation de la colonne '{col}': {str(e)}")
+    
+    def convert_features_string_columns_to_numeric(self):
+        col = self.dataset.features
+
+        ohe = OneHotEncoder(sparse_output=False)
+
+        for col in self.dataset.dataframe.columns:
+            if self.dataset.dataframe[col].dtype == 'object':
+                try:
+                    encoded_col = ohe.fit_transform(self.dataset.dataframe[[col]])
+
+                    self.dataset.dataframe.drop(col, axis=1, inplace=True)
+
+                    for i, category in enumerate(ohe.categories_[0]):
+                        self.dataset.dataframe[f"{col}_{category}"] = encoded_col[:, i]
+                except Exception as e:
+                    print(f"Erreur lors de la transformation de la colonne '{col}': {str(e)}")
 
     def load_test_size(self):
         log.info("Loading size of testing set...")
