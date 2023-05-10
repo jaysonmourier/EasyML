@@ -23,6 +23,7 @@ class ContextBuilder:
     algo: Model
     test_size: float
     feature_selector: int = None
+    c: bool = True
 
     def __init__(self, filepath: str):
         self.metamodel = metamodel_from_str(grammar)
@@ -46,8 +47,8 @@ class ContextBuilder:
         self.algo.train(self.dataset.Xtrain, self.dataset.Ytrain)
         self.algo.accuracy(self.dataset.Xtest, self.dataset.Ytest)
         print(self.model.features.feature_names)
-        #exit()
-        #plot(self.model.use_csv.csv_file, self.model.features.feature_names, self.model.model.model_type ,self.model.target.target_column,self.test_size)
+        if(self.c):
+            plot(self.model.use_csv.csv_file, self.model.features.feature_names, self.model.model.model_type ,self.model.target.target_column,self.test_size)
         log.info("Total score: " + str(self.algo.score))
         log.info("Best params: " + str(self.algo.best_params()))
         log.info("Best score: " + str(self.algo.best_score()))
@@ -98,8 +99,8 @@ class ContextBuilder:
         
         if self.feature_selector is None:
             self.dataset.features = features
-        else:
-            self.dataset.target = target
+        
+        self.dataset.target = target
 
     
     def select_k_features(X, y, k):
@@ -136,6 +137,7 @@ class ContextBuilder:
 
         for col in self.dataset.dataframe.columns:
             if self.dataset.dataframe[col].dtype == 'object':
+                self.c = False
                 try:
                     encoded_col = ohe.fit_transform(self.dataset.dataframe[[col]])
 
