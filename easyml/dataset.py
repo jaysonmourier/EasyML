@@ -16,6 +16,10 @@ class Dataset:
 
     dataframe: pd.DataFrame = None
     
+    features: list = None
+    target: str = None
+    test_size: float
+
     Xtrain: pd.DataFrame = None
     Xtest: pd.DataFrame = None
     Ytrain: pd.DataFrame = None
@@ -38,6 +42,15 @@ class Dataset:
         self.names = names
         self.encoding = encoding
         self.na_values = na_values
+        self.dataframe = pd.read_csv(
+            filepath,
+            #sep,
+            #header,
+            #index_col,
+            #names,
+            #encoding,
+            #na_values
+        )
 
     def load(self):
         try:
@@ -56,8 +69,8 @@ class Dataset:
             log.fatal(1, "File not found.")
             exit(1)
 
-    def split(self, test_size: float = .2):
-        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe.drop(self.target, axis=1), self.dataframe[self.target], test_size=test_size)
+    def split(self):
+        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=self.test_size)
 
     def __str__(self):
         if self.dataframe:  
