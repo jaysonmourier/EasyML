@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     if not args.file:
         easyml.log.fatal(1, "Please specify a file name")
-    
+
     if args.output:
         output_path = args.output
 
@@ -33,4 +33,6 @@ if __name__ == "__main__":
     # load dataset
     state = load_script(filepath=filepath)
     state.train_model()
-    state.export_model(output_path)
+    #state.export_model(output_path)
+
+    easyml.WebRenderer(state).run()
