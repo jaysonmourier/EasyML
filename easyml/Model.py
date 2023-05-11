@@ -12,6 +12,7 @@ class Model:
     def __init__(self, name):
         self.name = name
         self.score = 0
+        self.__load_model()
 
     def train(self, X, y):
         self.model.fit(X, y)
@@ -44,3 +45,12 @@ class Model:
             self.model = LogisticRegression()
         else:
             self.model = GradientBoostingClassifier()
+
+class SVM(Model):
+    pass
+
+class LR(Model):
+    pass
+
+class XGB(Model):
+    pass

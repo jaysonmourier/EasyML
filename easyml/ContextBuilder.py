@@ -4,6 +4,7 @@ from .model import Model
 from .pool import Pool
 from .dataset import Dataset
 
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from textx import metamodel_from_str
 import pandas as pd
 
@@ -29,13 +30,11 @@ class ContextBuilder:
         self.hydrate_features()
         self.hydrate_target()
         self.hydrate_test_size()
-        self.hydrate_pool()
         self.extract_std()
-        self.dataset.features = self.features
-        self.dataset.target = self.target
-        self.dataset.test_size = self.test_size
-        self.context = Context(self.dataset, self.pool, self._model)
-        self.context.std = self.std
+        self.target_processing()
+        self.features_processing()
+        self.hydrate_pool()
+        self.build_context()
 
     def hydrate_dataset(self):
         info("Load dataset...")
@@ -86,7 +85,8 @@ class ContextBuilder:
         info("Load features...")
         if not self.__object_exists(self.model, "features_list.features_name"):
             fatal(1, "Please, provide a list of features")
-        self.features = [feature.feature_name for feature in self.model.features_list.features_name]
+        features = [feature.feature_name for feature in self.model.features_list.features_name]
+        self.features = list(set(features))
     
     def hydrate_target(self):
         info("Load target...")
@@ -103,6 +103,9 @@ class ContextBuilder:
         
         if not set([self.target] + self.features).issubset(set(self.dataset.dataframe.columns)):
             fatal(1, "One or more specified variables are not present in the dataset.")
+
+        self.dataset.target = self.target
+        self.dataset.features = self.features
 
     def hydrate_pool(self):
         info("Creating pool...")
@@ -126,6 +129,7 @@ class ContextBuilder:
         info("Exctract test size parameter...")
         if not self.__object_exists(self.model, "model.option.test_size"):
             self.test_size = 0.2
+            self.dataset.test_size = self.test_size
             return
         
         self.test_size = self.model.model.option.test_size
@@ -135,9 +139,50 @@ class ContextBuilder:
         else:
             self.test_size /= 100
 
+        self.dataset.test_size = self.test_size
+
     def extract_std(self):
         if self.model.model.std is not None:
             self.std = True
+
+    def build_context(self):
+        self.context = Context(self.dataset, self.pool, self._model)
+        self.context.std = self.std
+
+    def target_processing(self):
+        if self.dataset.dataframe[self.target].dtypes == "object":
+            info("Target processing...")
+            count = len(self.dataset.dataframe[self.target].value_counts())
+            if count > 10:
+                if(str(input(f"Your target variable contains {count} classes, are you sure you want to continue? (y/n): ")) != "y"):
+                    exit(0)
+            label_encoder = LabelEncoder()
+            self.dataset.dataframe[self.target] = label_encoder.fit_transform(self.dataset.dataframe[self.target])
+               
+    def features_processing(self):
+        info("Features processing...")
+        self.dataset.transformed = {}
+        for key in self.features:
+            if self.dataset.dataframe[key].dtype == "object":
+                try:
+                    ohe = OneHotEncoder(sparse_output=False)
+                    transformed_data = ohe.fit_transform(self.dataset.dataframe[[key]])
+                    transformed_columns = ohe.get_feature_names_out([key])
+                    self.dataset.transformed.update({
+                        key: {
+                            "names": transformed_columns.tolist(), 
+                            "values": self.dataset.dataframe[key].unique(),
+                            "algo": ohe
+                        }
+                        })
+                    
+                    for i, col_name in enumerate(transformed_columns):
+                        self.dataset.dataframe[col_name] = transformed_data[:, i]
+
+                    self.dataset.dataframe.drop(key, axis=1, inplace=True)
+                except Exception as e:
+                    print(f"Erreur lors de la transformation de la colonne {key} : {str(e)}")
+                    exit(1)
         
     def get_context(self):
         info("Building context...")

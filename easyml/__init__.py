@@ -4,4 +4,4 @@ from .grammar import grammar
 from .context import Context
 from .contextbuilder import ContextBuilder
 from .log import *
-from .grammar2 import grammar
+from .grammar import grammar

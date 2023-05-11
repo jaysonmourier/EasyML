@@ -1,6 +1,9 @@
 from .dataset import Dataset
 from .pool import Pool
 from .model import Model
+from .log import info
+
+from joblib import dump
 
 class Context:
 
@@ -10,6 +13,11 @@ class Context:
         self.dataset = dataset
         self.pool = pool
         self.model = model
+        self.dataset.split()
 
     def train_model(self):
-        pass
+        info("Training...")
+        self.model.train(self.dataset.Xtrain, self.dataset.Ytrain)
+
+    def export_model(self, output):
+        dump(self.model.model, output)

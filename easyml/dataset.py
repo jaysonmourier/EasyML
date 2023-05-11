@@ -17,6 +17,7 @@ class Dataset:
     dataframe: pd.DataFrame = None
     
     features: list = None
+    transformed: dict = None
     target: str = None
     test_size: float
 
@@ -70,7 +71,18 @@ class Dataset:
             exit(1)
 
     def split(self):
-        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=self.test_size)
+        set_of_features = []
+        if self.transformed is not None:
+            for feature in self.features:
+                if feature in list(self.transformed.keys()):
+                    set_of_features.extend(self.transformed[feature]["names"])
+                else:
+                    set_of_features.extend([feature])
+        else:
+            self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=self.test_size)
+            return
+        
+        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[set_of_features], self.dataframe[self.target], test_size=self.test_size)
 
     def __str__(self):
         if self.dataframe:  

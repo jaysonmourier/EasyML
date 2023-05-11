@@ -1,46 +1,17 @@
 grammar = """
 Language:
-    use_csv=UseCSV
-    features=F
+    load_csv=LoadCSV
+    features_list=FeaturesList
     target=Target
-    test=TEST?
     model=Model
-    standardize=Standardize?
+    models=Models?
 ;
 
-UseCSV:
-    'USE' csv_file=STRING options=FILE_OPTIONS?
+LoadCSV:
+    'LOAD' csv_path=STRING options=CSV_OPTIONS?
 ;
 
-Features:
-    'FEATURES' feature_names*=ID[',']
-;
-
-FeaturesSelector:
-    'FEATURE_SELECTOR' selector=INT
-;
-
-F:
-    (Features|FeaturesSelector)
-;
-
-Target:
-    'TARGET' target_column=ID
-;
-
-Model:
-    'MODEL' model_type=ModelType
-;
-
-ModelType:
-    'SVM' | 'XGBoost' | 'Logistic'
-;
-
-Standardize:
-    'STD'
-;
-
-FILE_OPTIONS:
+CSV_OPTIONS:
 '{'
     sep=SEPARATOR?
     header=HEADER?
@@ -75,8 +46,36 @@ NA_VALUES:
 'NA VALUES' na_values*=STRING[',']
 ;
 
-TEST:
-'TEST' test=INT
+FeaturesList:
+    'USE' features_name*=feature[','] option=Standardize?
+;
+
+feature:
+    feature_name=ID
+;
+
+Target:
+    'PREDICT' target_name=ID
+;
+
+Model:
+    'COMPUTE' model_name=ModelName option=ModelOption? std=Standardize?
+;
+
+Standardize:
+    'USING STD'
+;
+
+ModelName:
+    'SVM' | 'XGB' | 'LogisticRegression'
+;
+
+ModelOption:
+    'WITH' test_size=INT '% OF TEST'
+;
+
+Models:
+    'COMPARE' models_list*=ModelName[',']?
 ;
 
 """

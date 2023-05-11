@@ -1,18 +1,17 @@
+from art import text2art
 import easyml
 import argparse
 import time
-from art import text2art
 
 
 def load_script(filepath: str):
     easyml.log.info("Initialization...")
-    return easyml.ContextBuilder(easyml.grammar, "easyml/example2.dsl").get_context()
+    return easyml.ContextBuilder(easyml.grammar, filepath).get_context()
 
 def home():
     ascii_art = text2art("EasyML")
     print(ascii_art)
-    print("Simplify your machine learning journey with EasyML!")
-    print("\n")
+    print("Simplify your machine learning journey with EasyML!\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -23,7 +22,7 @@ if __name__ == "__main__":
 
     if not args.file:
         easyml.log.fatal(1, "Please specify a file name")
-
+    
     if args.output:
         output_path = args.output
 
@@ -33,4 +32,5 @@ if __name__ == "__main__":
 
     # load dataset
     state = load_script(filepath=filepath)
-    #state.export_model(output_path)
+    state.train_model()
+    state.export_model(output_path)
