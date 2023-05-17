@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 import pandas as pd
 import uuid
 import subprocess
@@ -33,29 +33,33 @@ def post_data():
 
     key = request.get_json()['key']
     cmd_lines = request.get_json()['command']
-    result = None
+    result = ''
     suite = False
+
+    file_content = 'USE ./api/data/data.' + key + '.csv\n'
 
     if key is not None and cmd_lines is not None:  
         suite  = True
-        output = "./data/models/model." + key + ".csv"
+        file_content += cmd_lines
+       
+        with open('./commands/cmd.' + key + '.dsl', 'w') as f:
+            f.write(file_content)
+      
+        input = './commands/cmd.' + key + '.dsl'
+        output = "./models/model." + key + ".csv"
+
         try:
-            args = [main_app, "-f", cmd_lines, "-o", output] # TODO: Ajouter les lignes de commande 
-        except Exception:
-            suite = False
+            args = ['python', main_app, "-f", input, "-o", output] # TODO: Ajouter les lignes de commande 
+            subprocess.run(args)
+        except Exception as e:
+            # suite = False
+            result = str(e)
+            
 
-    return jsonify(result), 200 if suite else ('', 500)
-
-# Récupérer les résultats 
-# @app.route('api/get-results')
-# def get_results(): 
-#     return None
-
-# # Récupérer le rapport Pdf 
-# def get_report():
-#     return None
-
-
+    response = make_response(jsonify(result), 200) if suite else make_response('', 500)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+    
 
 # LANCEMENT DU SERVER 
 if __name__ == '__main__':
