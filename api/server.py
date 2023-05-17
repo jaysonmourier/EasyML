@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response, send_file
 import pandas as pd
 import uuid
 import subprocess
@@ -6,6 +6,7 @@ import subprocess
 app = Flask(__name__)
 
 main_app = "../app.py"
+model_path = "../model.save"
 data_csv = None
 cmd_lines = None
 key = None
@@ -26,8 +27,7 @@ def save_data():
 
 
 # Enregistrer les lignes de 
-# Récupérer les résultats 
-@app.route('/api/save-command', methods=['POST'])
+@app.route('/api/exec-command', methods=['POST'])
 def post_data():
     global main_app, cmd_lines, key
 
@@ -36,7 +36,7 @@ def post_data():
     result = ''
     suite = False
 
-    file_content = 'USE ./api/data/data.' + key + '.csv\n'
+    file_content = 'USE "./data/data.' + key + '.csv"\n'
 
     if key is not None and cmd_lines is not None:  
         suite  = True
@@ -46,20 +46,28 @@ def post_data():
             f.write(file_content)
       
         input = './commands/cmd.' + key + '.dsl'
-        output = "./models/model." + key + ".csv"
+        output = "../api/models/model." + key + ".csv"
 
         try:
             args = ['python', main_app, "-f", input, "-o", output] # TODO: Ajouter les lignes de commande 
             subprocess.run(args)
         except Exception as e:
-            # suite = False
-            result = str(e)
-            
+            suite = False
 
     response = make_response(jsonify(result), 200) if suite else make_response('', 500)
     response.headers['Content-Type'] = 'application/json'
     return response
     
+
+# Récupérer les résultats 
+@app.route('/api/get-model', methods=['GET'])
+def get_model():
+    global model_path
+    try:
+        with open(model_path, 'rb') as file:
+            return send_file(file, as_attachment=True, download_name='model.save')
+    except FileNotFoundError:
+        return 'Fichier non trouvé', 404
 
 # LANCEMENT DU SERVER 
 if __name__ == '__main__':
