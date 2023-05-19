@@ -1,231 +1,198 @@
+from .context import Context
+from .log import fatal, info
+from .model import Model
+from .pool import Pool
+from .dataset import Dataset
+
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from textx import metamodel_from_str
-
-from easyml.PDFBuilder import plot
-from . import log, grammar, Dataset, Model
-from joblib import dump
-
-from sklearn.model_selection import GridSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
-from sklearn.feature_selection import SelectKBest, f_classif
-
-
-from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingClassifier
-
-import numpy as np
 import pandas as pd
 
 class ContextBuilder:
 
-    dataset: Dataset
-    algo: Model
-    test_size: float
-    feature_selector: int = None
-    c: bool = True
+    context: Context = None
+    dataset: Dataset = None
+    pool: Pool
+    _model: Model
+    features: list
+    target: list
+    std: bool = False
 
-    def __init__(self, filepath: str):
-        self.metamodel = metamodel_from_str(grammar)
-        
+    def __init__(self, grammar_path: str, dsl_path: str):
         try:
-            self.model = self.metamodel.model_from_file(file_name=filepath)
+            self.metamodel = metamodel_from_str(grammar_path)
+            self.model = self.metamodel.model_from_file(file_name=dsl_path)
         except Exception as e:
             print(e)
-            log.fatal(1, "Error during initialization. Check the validity of the script name.")
-        
-        
-        self.load_dataset()
-        self.load_features_and_target()
-        self.extract_features()
-        self.convert_target_string_columns_to_numeric()
-        self.convert_features_string_columns_to_numeric()
-        self.load_test_size()
-        self.dataset.split(self.test_size)
-        self.load_std()
-        self.load_model()
-        self.algo.train(self.dataset.Xtrain, self.dataset.Ytrain)
-        self.algo.accuracy(self.dataset.Xtest, self.dataset.Ytest)
-        print(self.model.features.feature_names)
-        if(self.c):
-            plot(self.model.use_csv.csv_file, self.model.features.feature_names, self.model.model.model_type ,self.model.target.target_column,self.test_size)
-        log.info("Total score: " + str(self.algo.score))
-        log.info("Best params: " + str(self.algo.best_params()))
-        log.info("Best score: " + str(self.algo.best_score()))
+            fatal(1, "Error during initialization. Check the validity of the script name.")
 
-    def load_dataset(self):
-        log.info("Loading dataset...")
+        self.hydrate_dataset()
+        self.hydrate_features()
+        self.hydrate_target()
+        self.hydrate_test_size()
+        self.extract_std()
+        self.target_processing()
+        self.features_processing()
+        self.hydrate_pool()
+        self.build_context()
 
-        if not self.model.use_csv.csv_file:
-            log.fatal(1, "No csv file provided")
+    def hydrate_dataset(self):
+        info("Load dataset...")
+        sep = ","
+        header = 0
+        index_col = None
+        names = None
+        encoding = "utf-8"
+        na_values = ""
 
-        default_values = {
-            'sep': ',',
-            'header': 0,
-            'index_col': None,
-            'names': None,
-            'encoding': 'utf-8',
-            'na_values': ""
-        }
+        if not self.__object_exists(self.model, "load_csv.csv_path"):
+            fatal(1, "Please, provide a csv file.")
 
-        def get_value(option_name, textx_obj):
-            if textx_obj is None:
-                return default_values[option_name]
-            return getattr(textx_obj, option_name)
+        if self.__object_exists(self.model, "load_csv.options.sep"):
+            sep = self.model.load_csv.options.sep
 
-        options = {opt: get_value(opt, getattr(self.model.use_csv.options, opt, None)) for opt in default_values}
+        if self.__object_exists(self.model, "load_csv.options.header"):
+            header = self.model.load_csv.options.header
 
-        self.dataset = Dataset(self.model.use_csv.csv_file, **options)
-        self.dataset.load()
+        if self.__object_exists(self.model, "load_csv.options.index_col"):
+            index_col = self.model.load_csv.options.index_col
 
-    def load_features_and_target(self):
-        log.info("Loading features and target...")
+        if self.__object_exists(self.model, "load_csv.options.names"):
+            names = self.model.load_csv.options.names
+
+        if self.__object_exists(self.model, "load_csv.options.encoding"):
+            encoding = self.model.load_csv.options.encoding
+
+        if self.__object_exists(self.model, "load_csv.options.na_values"):
+            na_values = self.model.load_csv.options.na_values
+
+        path = self.model.load_csv.csv_path
 
         try:
-            self.feature_selector = self.model.features.selector
-        except Exception:
-            pass
-            
-        if self.feature_selector is None:
-            if self.model.features is None:
-                features = []
-            else:
-                features = self.model.features.feature_names
+            self.dataset = Dataset(
+                path,
+                sep,
+                header,
+                index_col,
+                names,
+                encoding,
+                na_values
+            )
+        except Exception as e:
+            fatal(1, "Unable to load dataset.")
 
-        if self.model.target is None:
-            target = ""
+    def hydrate_features(self):
+        info("Load features...")
+        if not self.__object_exists(self.model, "features_list.features_name"):
+            fatal(1, "Please, provide a list of features")
+        features = [feature.feature_name for feature in self.model.features_list.features_name]
+        self.features = list(set(features))
+    
+    def hydrate_target(self):
+        info("Load target...")
+        if not self.__object_exists(self.model, "target.target_name"):
+            fatal(1, "Please, provide a target name.")
+
+        self.target = self.model.target.target_name
+
+        if self.target in self.features:
+            self.features.remove(self.target)
+
+        if len(self.features) < 1:
+            fatal(1, "Not enough features for training.")
+        
+        if not set([self.target] + self.features).issubset(set(self.dataset.dataframe.columns)):
+            fatal(1, "One or more specified variables are not present in the dataset.")
+
+        self.dataset.target = self.target
+        self.dataset.features = self.features
+
+    def hydrate_pool(self):
+        info("Creating pool...")
+        self.models_name = set()
+        self.models = list()
+        if not self.__object_exists(self.model, "model.model_name"):
+            fatal(1, "Please, provide a valid model name.")
+
+        self.models_name.add(self.model.model.model_name)
+        self._model = Model(self.model.model.model_name)
+
+        if self.__object_exists(self.model, "models.models_list"):
+            self.models_name.update([*self.model.models.models_list])
+
+        for model in self.models_name:
+            self.models.append(Model(model))
+
+        self.pool = Pool(self.test_size, *self.models)
+
+    def hydrate_test_size(self):
+        info("Exctract test size parameter...")
+        if not self.__object_exists(self.model, "model.option.test_size"):
+            self.test_size = 0.2
+            self.dataset.test_size = self.test_size
+            return
+        
+        self.test_size = self.model.model.option.test_size
+
+        if self.test_size < 0 or self.test_size > 99:
+            self.test_size = 0.2
         else:
-            target = self.model.target.target_column
-        
-        if self.feature_selector is None:
-            self.dataset.features = features
-        
-        self.dataset.target = target
+            self.test_size /= 100
 
-    
-    def select_k_features(X, y, k):
-        if k > X.shape[1]:
-            raise ValueError(f"k ({k}) doit être inférieur ou égal au nombre de colonnes dans X ({X.shape[1]})")
+        self.dataset.test_size = self.test_size
 
-        selector = SelectKBest(score_func=f_classif, k=k)
+    def extract_std(self):
+        if self.model.model.std is not None:
+            self.std = True
 
-        selector.fit(X, y)
+    def build_context(self):
+        self.context = Context(self.dataset, self.pool, self._model)
+        self.context.std = self.std
 
-        X_selected = selector.transform(X)
-
-        return X_selected
-
-    def extract_features(self):
-        log.info("Extract feature...")
-        self.dataset.dataframe = self.dataset.dataframe[self.dataset.features + [self.dataset.target]]
-
-    def convert_target_string_columns_to_numeric(self):
-        col = self.dataset.target
-
-        le = LabelEncoder()
-
-        if self.dataset.dataframe[col].dtype == 'object':
-            try:
-                self.dataset.dataframe[col] = le.fit_transform(self.dataset.dataframe[col])
-            except Exception as e:
-                print(f"Erreur lors de la transformation de la colonne '{col}': {str(e)}")
-    
-    def convert_features_string_columns_to_numeric(self):
-        col = self.dataset.features
-
-        ohe = OneHotEncoder(sparse_output=False)
-
-        for col in self.dataset.dataframe.columns:
-            if self.dataset.dataframe[col].dtype == 'object':
-                self.c = False
+    def target_processing(self):
+        if self.dataset.dataframe[self.target].dtypes == "object":
+            info("Target processing...")
+            count = len(self.dataset.dataframe[self.target].value_counts())
+            if count > 10:
+                if(str(input(f"Your target variable contains {count} classes, are you sure you want to continue? (y/n): ")) != "y"):
+                    exit(0)
+            label_encoder = LabelEncoder()
+            self.dataset.dataframe[self.target] = label_encoder.fit_transform(self.dataset.dataframe[self.target])
+               
+    def features_processing(self):
+        info("Features processing...")
+        self.dataset.transformed = {}
+        for key in self.features:
+            if self.dataset.dataframe[key].dtype == "object":
                 try:
-                    encoded_col = ohe.fit_transform(self.dataset.dataframe[[col]])
+                    ohe = OneHotEncoder(sparse_output=False)
+                    transformed_data = ohe.fit_transform(self.dataset.dataframe[[key]])
+                    transformed_columns = ohe.get_feature_names_out([key])
+                    self.dataset.transformed.update({
+                        key: {
+                            "names": transformed_columns.tolist(), 
+                            "values": self.dataset.dataframe[key].unique(),
+                            "algo": ohe
+                        }
+                        })
+                    
+                    for i, col_name in enumerate(transformed_columns):
+                        self.dataset.dataframe[col_name] = transformed_data[:, i]
 
-                    self.dataset.dataframe.drop(col, axis=1, inplace=True)
-
-                    for i, category in enumerate(ohe.categories_[0]):
-                        self.dataset.dataframe[f"{col}_{category}"] = encoded_col[:, i]
+                    self.dataset.dataframe.drop(key, axis=1, inplace=True)
                 except Exception as e:
-                    print(f"Erreur lors de la transformation de la colonne '{col}': {str(e)}")
-
-    def load_test_size(self):
-        log.info("Loading size of testing set...")
+                    print(f"Erreur lors de la transformation de la colonne {key} : {str(e)}")
+                    exit(1)
         
-        test_size = self.model.test.test if self.model.test is not None else 20
-
-        if test_size < 0 or test_size > 99:
-            test_size = 20
-
-        self.test_size = test_size / 100
-
-    def load_model(self):
-        log.info("Loading model...")
-
-        model_name = self.model.model.model_type if self.model.model.model_type is not None else "SVM"
-
-        m = None
-
-        if model_name == "SVM":
-            m = self.build_svm()
-        elif model_name == "XGBoost":
-            m = self.build_gb()
-        elif model_name == "Logistic":
-            m = self.build_lr()
-
-        self.algo = Model(m)
-
-    def load_std(self):
-        self.std = self.model.standardize if self.model.standardize else None
-
-    def export_model(self, output: str ="model.joblib"):
-        dump(self.algo, output)
-
-    def __str__(self):
-        pass
-
-
-    def build_svm(self):
-        param_grid = {
-            'svc__C': [0.1, 1, 10, 100],
-            'svc__gamma': [0.001, 0.01, 0.1, 1],
-            'svc__kernel': ['linear', 'rbf', 'sigmoid']
-        }
-
-        pipeline = Pipeline([
-            ('scaler', StandardScaler() if self.std else None),
-            ('svc', SVC())
-        ])
-
-        return GridSearchCV(pipeline, param_grid=param_grid, cv=5, n_jobs=-1, verbose=3)
+    def get_context(self):
+        info("Building context...")
+        return self.context
     
-    def build_gb(self):
-        param_grid = {
-            'gb__n_estimators': [50, 100, 200],
-            'gb__learning_rate': [0.01, 0.1, 1],
-            'gb__max_depth': [3, 5, 7]
-        }
-
-        pipeline = Pipeline([
-            ('scaler', StandardScaler() if self.std else None),
-            ('gb', GradientBoostingClassifier())
-        ])
-
-        return GridSearchCV(pipeline, param_grid=param_grid, cv=5, n_jobs=-1, verbose=3)
-
-
-    def build_lr(self):
-        param_grid = {
-            'penalty': ['l1', 'l2', 'elasticnet'],
-            'C': np.logspace(-4, 4, 20),
-            'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'],
-            'max_iter': [1000, 2000, 5000]
-        }
-
-        pipeline = Pipeline([
-            ('scaler', StandardScaler() if self.std else None),
-            ('lr', LogisticRegression())
-        ])
-
-        logreg = LogisticRegression(random_state=42)
-
-        return GridSearchCV(logreg, param_grid, cv=5, verbose=3, n_jobs=-1)
+    def __object_exists(self, obj, path):
+        try:
+            parts = path.split('.')
+            for part in parts:
+                obj = getattr(obj, part)
+            return True
+        except AttributeError:
+            return False

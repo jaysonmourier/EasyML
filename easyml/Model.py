@@ -1,10 +1,18 @@
 from tqdm import tqdm
 import multiprocessing as mp
 
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
+
 class Model:
-    def __init__(self, model):
-        self.model = model
+    model = None
+    score: float
+
+    def __init__(self, name):
+        self.name = name
         self.score = 0
+        self.__load_model()
 
     def train(self, X, y):
         self.model.fit(X, y)
@@ -23,3 +31,26 @@ class Model:
         for i, _ in enumerate(batches):
             pbar.update()
         pbar.close()
+
+    def load(self):
+        self.__load_model()
+
+    def __str__(self):
+        return self.name
+
+    def __load_model(self):
+        if self.name == "SVM":
+            self.model = SVC()
+        elif self.name == "Logistic":
+            self.model = LogisticRegression()
+        else:
+            self.model = GradientBoostingClassifier()
+
+class SVM(Model):
+    pass
+
+class LR(Model):
+    pass
+
+class XGB(Model):
+    pass

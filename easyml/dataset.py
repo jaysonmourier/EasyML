@@ -16,6 +16,11 @@ class Dataset:
 
     dataframe: pd.DataFrame = None
     
+    features: list = None
+    transformed: dict = None
+    target: str = None
+    test_size: float
+
     Xtrain: pd.DataFrame = None
     Xtest: pd.DataFrame = None
     Ytrain: pd.DataFrame = None
@@ -38,6 +43,15 @@ class Dataset:
         self.names = names
         self.encoding = encoding
         self.na_values = na_values
+        self.dataframe = pd.read_csv(
+            filepath,
+            #sep,
+            #header,
+            #index_col,
+            #names,
+            #encoding,
+            #na_values
+        )
 
     def load(self):
         try:
@@ -56,8 +70,19 @@ class Dataset:
             log.fatal(1, "File not found.")
             exit(1)
 
-    def split(self, test_size: float = .2):
-        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe.drop(self.target, axis=1), self.dataframe[self.target], test_size=test_size)
+    def split(self):
+        set_of_features = []
+        if self.transformed is not None:
+            for feature in self.features:
+                if feature in list(self.transformed.keys()):
+                    set_of_features.extend(self.transformed[feature]["names"])
+                else:
+                    set_of_features.extend([feature])
+        else:
+            self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[self.features], self.dataframe[self.target], test_size=self.test_size)
+            return
+        
+        self.Xtrain, self.Xtest, self.Ytrain, self.Ytest = train_test_split(self.dataframe[set_of_features], self.dataframe[self.target], test_size=self.test_size)
 
     def __str__(self):
         if self.dataframe:  
