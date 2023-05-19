@@ -1,3 +1,4 @@
+import time
 from tqdm import tqdm
 import multiprocessing as mp
 
@@ -12,10 +13,13 @@ class Model:
     def __init__(self, name):
         self.name = name
         self.score = 0
+        self.training_time = 0.
         self.__load_model()
 
     def train(self, X, y):
+        start = time.time()
         self.model.fit(X, y)
+        self.training_time = time.time() - start
 
     def accuracy(self, Xtest, ytest):
         self.score = self.model.score(Xtest, ytest)

@@ -120,8 +120,8 @@ class ContextBuilder:
         if self.__object_exists(self.model, "models.models_list"):
             self.models_name.update([*self.model.models.models_list])
 
-        for model in self.models_name:
-            self.models.append(Model(model))
+        for name in self.models_name:
+            self.models.append(Model(name))
 
         self.pool = Pool(self.test_size, *self.models)
 

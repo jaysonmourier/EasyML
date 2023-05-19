@@ -17,7 +17,9 @@ class Context:
 
     def train_model(self):
         info("Training...")
-        self.model.train(self.dataset.Xtrain, self.dataset.Ytrain)
+        for model in self.pool.models:
+            model.train(self.dataset.Xtrain, self.dataset.Ytrain)
+            model.accuracy(self.dataset.Xtest, self.dataset.Ytest)
 
     def export_model(self, output):
         dump(self.model.model, output)

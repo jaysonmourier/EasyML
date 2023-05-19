@@ -3,7 +3,6 @@ import easyml
 import argparse
 import time
 
-
 def load_script(filepath: str):
     easyml.log.info("Initialization...")
     return easyml.ContextBuilder(easyml.grammar, filepath).get_context()
@@ -33,6 +32,8 @@ if __name__ == "__main__":
     # load dataset
     state = load_script(filepath=filepath)
     state.train_model()
+
     #state.export_model(output_path)
 
-    easyml.WebRenderer(state).run()
+    flask_app = easyml.WebRenderer(state)
+    flask_app.run()

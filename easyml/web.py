@@ -6,15 +6,17 @@ class WebRenderer:
     def __init__(self, context: Context):
         self.app = Flask(__name__)
         self.app.add_url_rule('/', 'index', self.index)
-        self.app.add_url_rule('/hello', 'hello', self.hello)
         self.context = context
 
     def index(self):
-        return render_template('index.html', score=self.context.model.model.score(self.context.dataset.Xtest, self.context.dataset.Ytest))
-
-    def hello(self):
-        print("Hello")
-        return ''
+        models_result = {}
+        for m in self.context.pool.models:
+            models_result.update({
+                "name": m.name, 
+                "accuracy": m.score,
+                "training_time": m.training_time
+            })
+        return render_template('index.html', results=models_result)
 
     def run(self):
-        self.app.run(debug=True)
+        self.app.run(debug=False)
