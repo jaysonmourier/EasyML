@@ -6,7 +6,7 @@ import subprocess
 app = Flask(__name__)
 
 main_app = "../app.py"
-model_path = "../model.save"
+# model_path = "../model.save"
 data_csv = None
 cmd_lines = None
 key = None
@@ -46,7 +46,7 @@ def post_data():
             f.write(file_content)
       
         input = './commands/cmd.' + key + '.dsl'
-        output = "../api/models/model." + key + ".csv"
+        output = "./models/model." + key + ".csv"
 
         try:
             args = ['python', main_app, "-f", input, "-o", output] # TODO: Ajouter les lignes de commande 
@@ -59,12 +59,11 @@ def post_data():
     return response
     
 
-# Récupérer les résultats 
+# Récupérer le modèle 
 @app.route('/api/get-model', methods=['GET'])
 def get_model():
-    global model_path
     try:
-        with open(model_path, 'rb') as file:
+        with open("./models/model." + request.get_json()['key'] + ".save", 'rb') as file:
             return send_file(file, as_attachment=True, download_name='model.save')
     except FileNotFoundError:
         return 'Fichier non trouvé', 404
